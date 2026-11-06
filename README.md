@@ -9,7 +9,7 @@ A React + Django app that helps a truck driver pick the safest route. Enter an o
 5. recommends a route;
 6. shows everything on a map, with a weather heatmap along the corridor and a 0–48 hour forecast slider.
 
-- **Live app:** _link added after deploy_
+- **Live app:** https://weather-truck-routing-omega.vercel.app
 - **Walkthrough (Loom):** _link added after recording_
 
 ---
