@@ -12,7 +12,7 @@ type ServerState = { kind: "connecting" } | { kind: "waking" } | { kind: "ready"
 export default function App() {
   const [server, setServer] = useState<ServerState>({ kind: "connecting" });
   const [result, setResult] = useState<TripResult | null>(null);
-  const [heatmap, setHeatmap] = useState<Heatmap | "loading" | "failed" | null>(null);
+  const [heatmap, setHeatmap] = useState<Heatmap | "loading" | "waiting" | "failed" | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hour, setHour] = useState(0);
   const [heatLayer, setHeatLayer] = useState<HeatLayer>("risk");
@@ -22,15 +22,23 @@ export default function App() {
   const [focus, setFocus] = useState<Focus | null>(null);
   const inFlight = useRef<AbortController | null>(null);
   const lastInput = useRef<TripInput | null>(null);
+  const autoRetry = useRef<number | undefined>(undefined);
 
   // The 0-48 h corridor grid: one request per trip, after which the slider is local.
-  const loadHeatmap = useCallback((input: TripInput, signal: AbortSignal) => {
+  // If the free weather service's per-minute limit is hit, try once more after a minute.
+  const loadHeatmap = useCallback((input: TripInput, signal: AbortSignal, firstTry = true) => {
+    window.clearTimeout(autoRetry.current);
     setHeatmap("loading");
     api
       .heatmap(input, signal)
       .then(setHeatmap)
       .catch(() => {
-        if (!signal.aborted) setHeatmap("failed");
+        if (signal.aborted) return;
+        if (!firstTry) return setHeatmap("failed");
+        setHeatmap("waiting");
+        autoRetry.current = window.setTimeout(() => {
+          if (!signal.aborted) loadHeatmap(input, signal, false);
+        }, 60_000);
       });
   }, []);
 
@@ -69,7 +77,7 @@ export default function App() {
   }, [loadHeatmap]);
 
   const retryHeatmap = useCallback(() => {
-    if (lastInput.current && inFlight.current) loadHeatmap(lastInput.current, inFlight.current.signal);
+    if (lastInput.current && inFlight.current) loadHeatmap(lastInput.current, inFlight.current.signal, false);
   }, [loadHeatmap]);
 
   const onHour = useCallback((h: number) => setHour(h), []);

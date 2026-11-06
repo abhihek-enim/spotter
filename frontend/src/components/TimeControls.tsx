@@ -7,7 +7,7 @@ import { positionAt } from "../lib/route";
 
 interface Props {
   result: TripResult;
-  heatmapState: "loading" | "failed" | "ready";
+  heatmapState: "loading" | "waiting" | "failed" | "ready";
   onRetryHeatmap: () => void;
   selectedId: string;
   hour: number;
@@ -104,7 +104,9 @@ export function TimeControls({
           </span>
         ) : (
           <span className="flex items-center gap-2 text-xs text-[var(--text-secondary)]" role="status">
-            Weather grid unavailable (the free weather service limits requests per minute). Routes are still valid.
+            {heatmapState === "waiting"
+              ? "Weather grid paused by the free weather service's per-minute limit; retrying automatically in a minute. Routes are still valid."
+              : "Weather grid unavailable right now. Routes are still valid."}
             <button type="button" className="link-button" onClick={onRetryHeatmap}>
               Retry
             </button>
