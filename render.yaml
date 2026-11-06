@@ -1,0 +1,20 @@
+# Render blueprint for the Django API (free web service).
+services:
+  - type: web
+    name: truck-routing-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # One process with threads, so the in-memory cache is shared by every request.
+    startCommand: gunicorn config.wsgi --workers 1 --threads 8 --timeout 120 --bind 0.0.0.0:$PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.3
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_ALLOWED_HOSTS
+        value: .onrender.com
+      - key: TOMTOM_API_KEY
+        sync: false # pasted in the Render dashboard, never committed
