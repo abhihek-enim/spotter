@@ -1,0 +1,26 @@
+# systemd unit for the Django API. Install: /etc/systemd/system/spotter-api.service
+[Unit]
+Description=Weather-aware truck routing API (Django + gunicorn)
+After=network.target
+
+[Service]
+User=spotter
+Group=spotter
+WorkingDirectory=/opt/spotter/backend
+# DJANGO_SECRET_KEY, DJANGO_ALLOWED_HOSTS, DJANGO_DEBUG=false, TOMTOM_API_KEY (root-owned, not in git)
+EnvironmentFile=/etc/spotter/env
+Environment=PYTHONDONTWRITEBYTECODE=1
+# One process with threads, so the in-memory cache is shared by every request.
+ExecStart=/opt/spotter/venv/bin/gunicorn config.wsgi --workers 1 --threads 8 --timeout 120 --bind 127.0.0.1:8001
+Restart=on-failure
+RestartSec=3
+
+# The server runs other services: keep this one contained.
+MemoryMax=400M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

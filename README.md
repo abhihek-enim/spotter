@@ -211,18 +211,25 @@ The backend tests run offline. TomTom and Open-Meteo replies are either recorded
 
 | Part | Where | How |
 |---|---|---|
-| API | Render free web service | `render.yaml` |
-| Web app | Vercel | `frontend/`; `vercel.json` forwards `/api/*` to the Render URL |
+| API | AWS EC2 (Ubuntu), behind Nginx with a Let's Encrypt certificate | `deploy/ec2/` |
+| Web app | Vercel | root directory `frontend/`; `vercel.json` forwards `/api/*` to the API host |
 
-Environment variables for the API:
+The browser only ever talks to the Vercel address. Vercel forwards `/api/*` to the API over HTTPS, so there is no CORS setup and the TomTom key stays on the server.
+
+On the server:
+
+- **`spotter-api.service`** (systemd) runs gunicorn on `127.0.0.1:8001`. It runs as its own unprivileged user, with a 400 MB memory cap, because the machine runs other services.
+- **`nginx-spotter.conf`** serves only `/api/`. certbot adds the HTTPS block and the redirect.
+- **`update.sh`** pulls the latest commit, installs requirements and restarts the service.
+
+Settings live in a root-owned `/etc/spotter/env` (never committed):
 
 | Variable | Value |
 |---|---|
-| `DJANGO_SECRET_KEY` | any long random string (Render generates one) |
-| `DJANGO_ALLOWED_HOSTS` | `.onrender.com` |
-| `TOMTOM_API_KEY` | the TomTom key, set in the dashboard, never committed |
-
-Render's free tier sleeps after 15 idle minutes. The page calls `/api/health` as soon as it loads, so the server is usually awake by the time a trip is submitted, and the page says when it is waking up.
+| `DJANGO_DEBUG` | `false` |
+| `DJANGO_SECRET_KEY` | a long random string |
+| `DJANGO_ALLOWED_HOSTS` | the API host name |
+| `TOMTOM_API_KEY` | the TomTom key |
 
 ## Limitations and next steps
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://truck-routing-api.onrender.com/api/:path*" }
+    { "source": "/api/:path*", "destination": "https://65-2-172-227.sslip.io/api/:path*" }
   ]
 }
